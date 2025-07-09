@@ -23,7 +23,7 @@ Friendly NPC:"""
         temperature=0.8
     )
 
-    npc_reply = response['choices'][0]['message']['content']
+    npc_reply = response["choices"][0]["message"]["content"]
     return jsonify({"reply": npc_reply})
 
 if __name__ == "__main__":
