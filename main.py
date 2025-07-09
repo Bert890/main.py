@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
-HF_MODEL_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
+HF_MODEL_URL = "https://api-inference.huggingface.co/models/google/flan-t5-small"
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -14,7 +14,7 @@ def chat():
         player = data.get("player", "")
         message = data.get("message", "")
 
-        prompt = f"{player}: {message}\nFriendly NPC:"
+        prompt = f"Respond as a friendly NPC to: {message}"
 
         headers = {
             "Authorization": f"Bearer {HF_TOKEN}",
