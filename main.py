@@ -4,8 +4,8 @@ import os
 
 app = Flask(__name__)
 
-API_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
-HEADERS = {"Authorization": f"Bearer {os.environ.get('HF_TOKEN')}"}
+HF_TOKEN = os.environ.get("HF_TOKEN")
+HF_MODEL_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
 
 @app.route("/chat", methods=["POST"])
 def chat():
@@ -14,37 +14,31 @@ def chat():
         player = data.get("player", "")
         message = data.get("message", "")
 
-        prompt = f"""You are a friendly NPC in a Roblox game.
-Player: {message}
-Friendly NPC:"""
+        prompt = f"{player}: {message}\nFriendly NPC:"
 
-        payload = {
-            "inputs": prompt,
-            "parameters": {
-                "max_new_tokens": 100,
-                "temperature": 0.7
-            }
+        headers = {
+            "Authorization": f"Bearer {HF_TOKEN}",
+            "Content-Type": "application/json"
         }
 
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        response = requests.post(
+            HF_MODEL_URL,
+            headers=headers,
+            json={"inputs": prompt}
+        )
 
-        try:
-            result = response.json()
-        except Exception as e:
-            print("Failed to decode Hugging Face response:", response.text)
-            return jsonify({"reply": "Hugging Face API error", "error": str(e)})
+        if response.status_code != 200:
+            return jsonify({"error": f"Hugging Face API error: {response.text}", "reply": "Server crashed!"}), 500
 
-        print("Hugging Face result:", result)
+        output = response.json()
+        if isinstance(output, dict) and "error" in output:
+            return jsonify({"error": output["error"], "reply": "Model loading or error"}), 503
 
-        if isinstance(result, dict) and "error" in result:
-            return jsonify({"reply": "Model error from Hugging Face", "hf_error": result.get("error")})
-
-        reply = result[0]["generated_text"].split("Friendly NPC:")[-1].strip()
-        return jsonify({"reply": reply})
+        generated_text = output[0]["generated_text"].split("Friendly NPC:")[-1].strip()
+        return jsonify({"reply": generated_text})
 
     except Exception as e:
-        print("SERVER ERROR:", e)
-        return jsonify({"reply": "Server crashed!", "error": str(e)})
+        return jsonify({"error": str(e), "reply": "Server crashed!"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
