@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 import openai
 import os
 
+print("Using OpenAI version:", openai.__version__)
+
 app = Flask(__name__)
 openai.api_key = os.environ['OPENAI_API_KEY']
 
