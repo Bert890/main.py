@@ -5,7 +5,7 @@ import os
 app = Flask(__name__)
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
-HF_MODEL_URL = "https://api-inference.huggingface.co/models/microsoft/DialoGPT-medium"
+HF_MODEL_URL = "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-alpha"
 
 @app.route("/chat", methods=["POST"])
 def chat():
