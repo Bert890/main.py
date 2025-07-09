@@ -1,34 +1,43 @@
 from flask import Flask, request, jsonify
-import openai
+import requests
 import os
 
-print("Using OpenAI version:", openai.__version__)
-
 app = Flask(__name__)
-openai.api_key = os.environ['OPENAI_API_KEY']
+
+API_URL = "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1"
+HEADERS = {"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}
 
 @app.route("/chat", methods=["POST"])
 def chat():
     data = request.get_json()
-    message = data.get("message", "")
     player = data.get("player", "")
+    message = data.get("message", "")
 
-    prompt = f"""You are a very friendly NPC in a Roblox game. Be cheerful and helpful when responding to the player.
-
+    prompt = f"""You are a very friendly NPC in a Roblox game.
 Player: {message}
 Friendly NPC:"""
 
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=100,
-        temperature=0.8
-    )
+    payload = {
+        "inputs": prompt,
+        "parameters": {
+            "max_new_tokens": 100,
+            "temperature": 0.7,
+            "top_p": 0.95,
+            "repetition_penalty": 1.1
+        }
+    }
 
-    npc_reply = response["choices"][0]["message"]["content"]
-    return jsonify({"reply": npc_reply})
+    response = requests.post(API_URL, headers=HEADERS, json=payload)
+    result = response.json()
+
+    if isinstance(result, dict) and "error" in result:
+        return jsonify({"reply": "Sorry, I'm having trouble right now."})
+
+    reply = result[0]["generated_text"].split("Friendly NPC:")[-1].strip()
+    return jsonify({"reply": reply})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Railway gives you this
+    port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
 
