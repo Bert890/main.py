@@ -27,20 +27,26 @@ Friendly NPC:"""
         }
 
         response = requests.post(API_URL, headers=HEADERS, json=payload)
-        result = response.json()
+
+        try:
+            result = response.json()
+        except Exception as e:
+            print("Failed to decode Hugging Face response:", response.text)
+            return jsonify({"reply": "Hugging Face API error", "error": str(e)})
 
         print("Hugging Face result:", result)
 
         if isinstance(result, dict) and "error" in result:
-            return jsonify({"reply": "Error from Hugging Face API."})
+            return jsonify({"reply": "Model error from Hugging Face", "hf_error": result.get("error")})
 
         reply = result[0]["generated_text"].split("Friendly NPC:")[-1].strip()
         return jsonify({"reply": reply})
 
     except Exception as e:
-        print("ERROR:", e)
+        print("SERVER ERROR:", e)
         return jsonify({"reply": "Server crashed!", "error": str(e)})
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
